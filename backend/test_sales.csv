@@ -1,0 +1,16 @@
+Transaction_ID,Region,Product_Category,Units_Sold,Price_Per_Unit,Revenue,Customer_Age,Churn
+1001,West,Electronics,12,$150.00,1800,34,No
+1002,East,Furniture,4,$85.50,342,45,No
+1003,North,Clothing,25,$20.00,500,22,Yes
+1004,West,Electronics,8,$150.00,1200,29,No
+1005,South,Furniture,2,$450.00,900,56,No
+1006,East,Clothing,15,$20.00,300,19,Yes
+1007,West,Electronics,10,$150.00,1500,38,No
+1008,North,Furniture,6,$85.50,513,41,No
+1009,South,Clothing,30,$15.00,450,25,Yes
+1010,West,Electronics,14,$150.00,2100,50,No
+1011,East,Furniture,5,$85.50,427.5,61,No
+1012,North,Clothing,18,$20.00,360,28,Yes
+1013,South,Electronics,7,$150.00,1050,33,No
+1014,West,Furniture,3,$450.00,1350,47,No
+1015,East,Clothing,22,$18.00,396,21,Yes

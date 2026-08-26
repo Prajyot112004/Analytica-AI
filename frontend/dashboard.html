@@ -1,0 +1,681 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - Analytica AI v2</title>
+    <link rel="stylesheet" href="css/style.css">
+    <link rel="stylesheet" href="css/dashboard.css">
+    <link rel="stylesheet" href="css/chat.css">
+    <!-- Markdown rendering for chat bubbles -->
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+
+        <!-- ═══════════ LEFT SIDEBAR ═══════════ -->
+        <aside class="sidebar glass">
+            <!-- Brand -->
+            <div class="sidebar-brand">
+                <div class="brand-icon">🤖</div>
+                <div class="brand-text">Analytica AI <span>v2</span></div>
+            </div>
+
+            <!-- Session Selector -->
+            <div class="sidebar-section-title">Session</div>
+            <div class="sidebar-session">
+                <select id="sessionSelect"></select>
+            </div>
+
+            <!-- Upload Zone -->
+            <div class="sidebar-section-title">Upload Data</div>
+            <div class="sidebar-upload">
+                <div id="dropZone" class="sidebar-drop-zone">
+                    <span class="drop-icon">📂</span>
+                    <p>Drop <strong>CSV</strong>, <strong>JSON</strong>, or <strong>TXT</strong><br>or <span class="drop-highlight">browse files</span></p>
+                    <input type="file" id="fileInput" accept=".csv,.json,.txt" style="display:none;">
+                </div>
+            </div>
+
+            <!-- Active Dataset Dropdown -->
+            <div class="sidebar-section-title">Active Dataset</div>
+            <div class="sidebar-dataset-select">
+                <select id="datasetSelect">
+                    <option value="">— No datasets —</option>
+                </select>
+            </div>
+
+            <!-- Active Dataset Info Card -->
+            <div id="activeDatasetCard" class="sidebar-active-card">
+                <div class="active-filename" id="activeFilename">—</div>
+                <div class="active-meta" id="activeMeta">—</div>
+            </div>
+
+            <!-- Navigation -->
+            <div class="sidebar-section-title">Views</div>
+            <nav class="sidebar-nav">
+                <div class="nav-item active" data-tab="viewDataTab" onclick="showTab('viewDataTab')">
+                    <span class="nav-icon">📋</span> View Data
+                </div>
+                <div class="nav-item" data-tab="visualizationsTab" onclick="showTab('visualizationsTab')">
+                    <span class="nav-icon">📊</span> Visualizations
+                </div>
+                <div class="nav-item" data-tab="historyTab" onclick="showTab('historyTab')">
+                    <span class="nav-icon">📜</span> History
+                </div>
+            </nav>
+
+            <!-- User Row -->
+            <div class="sidebar-user">
+                <span class="user-name" id="userDisplayName">User</span>
+                <button class="btn-logout" onclick="logoutUser()">Logout</button>
+            </div>
+
+            <!-- Footer -->
+            <div class="sidebar-footer">
+                Analytica AI v2 &copy; 2026<br>Agentic HF Cloud Inference
+            </div>
+        </aside>
+
+        <!-- ═══════════ MAIN CONTENT ═══════════ -->
+        <main class="main-workspace">
+
+            <!-- TAB: View Data -->
+            <div id="viewDataTab" class="tab-content active-tab">
+                <!-- Stats Grid (shown after dataset selected) -->
+                <div id="statsGrid" class="stats-grid" style="display:none;">
+                    <div class="glass-card stat-card">
+                        <span class="stat-label">Rows</span>
+                        <span id="statRows" class="stat-value">0</span>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <span class="stat-label">Columns</span>
+                        <span id="statCols" class="stat-value">0</span>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <span class="stat-label">Missing</span>
+                        <span id="statMissing" class="stat-value">0%</span>
+                    </div>
+                    <div class="glass-card stat-card">
+                        <span class="stat-label">Duplicates</span>
+                        <span id="statDuplicates" class="stat-value">0</span>
+                    </div>
+                </div>
+
+                <!-- Data Preview Table -->
+                <div id="previewCard" class="glass-card" style="display:none;">
+                    <h3 style="font-size:1rem; margin-bottom:12px;">Data Preview</h3>
+                    <div class="table-container">
+                        <table id="previewTable" class="preview-table">
+                            <thead><tr id="tableHead"></tr></thead>
+                            <tbody id="tableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- Empty state -->
+                <div id="viewDataEmpty" class="empty-state">
+                    <span class="empty-icon">📂</span>
+                    Upload a dataset from the sidebar to get started.
+                </div>
+            </div>
+
+            <!-- TAB: Visualizations -->
+            <div id="visualizationsTab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Visualizations</h2>
+                </div>
+                <div id="chartsGrid" class="charts-grid">
+                    <div class="empty-state">
+                        <span class="empty-icon">📊</span>
+                        No charts yet. Ask the AI assistant to generate visualizations for your active dataset.
+                    </div>
+                </div>
+            </div>
+
+            <!-- TAB: History -->
+            <div id="historyTab" class="tab-content">
+                <div class="tab-header">
+                    <h2>Analysis History</h2>
+                </div>
+                <div id="historyContainer">
+                    <div class="empty-state">
+                        <span class="empty-icon">📜</span>
+                        No analysis history yet for this dataset.
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- ═══════════ RIGHT CHAT SIDEBAR ═══════════ -->
+        <aside class="chat-sidebar">
+            <div class="chat-header" style="display: flex; justify-content: space-between; align-items: center;">
+                <div><span>🤖</span> AI Data Analyst</div>
+                <button onclick="createNewConversation()" class="btn btn-primary" style="padding: 4px 10px; font-size: 0.8rem;">New Chat</button>
+            </div>
+            <div class="chat-thread-container" style="padding: 10px 16px; border-bottom: 1px solid var(--border-color); background: rgba(15, 23, 42, 0.4);">
+                <select id="chatThreadSelect" class="form-select" style="width: 100%; font-size: 0.85rem; padding: 6px;"></select>
+            </div>
+            <div id="chatMessages" class="chat-messages">
+                <div class="msg-bubble msg-assistant">
+                    Hello! I'm your AI Data Analyst. Upload a dataset on the left, then ask me anything — <strong>clean data</strong>, <strong>generate charts</strong>, <strong>train ML models</strong>, or just <strong>explore your data</strong>. Everything happens through our conversation!
+                </div>
+            </div>
+            <button id="scrollBtn" class="btn btn-primary" style="position:absolute; bottom:70px; right:20px; display:none; z-index:10;">⬇️</button>
+            <div class="chat-input-container">
+                <input type="text" id="chatInput" class="chat-input" placeholder="Ask about your data..." onkeypress="if(event.key==='Enter') sendChatMessage()">
+                <button onclick="sendChatMessage()" class="btn btn-primary" style="padding:8px 14px;">Send</button>
+            </div>
+        </aside>
+
+    </div>
+
+    <!-- SCRIPTS -->
+    <script src="js/api.js"></script>
+    <script src="js/auth.js"></script>
+    <script>
+        let currentSessionId = null;
+        let activeFileId = null;
+        let activeConversationId = null;
+
+        // ── Initialization ──────────────────────────────────────
+        document.addEventListener("DOMContentLoaded", async () => {
+            checkAuth();
+
+            const user = await fetchUserProfile();
+            if (user) {
+                document.getElementById("userDisplayName").innerText = user.full_name || user.username;
+            }
+
+            await loadSessions();
+            setupDropZone();
+            await loadUserDatasets();       // populate dropdown
+
+            // Session switch
+            document.getElementById("sessionSelect").addEventListener("change", async (e) => {
+                currentSessionId = e.target.value;
+                await loadUserDatasets();
+                await loadConversations();
+                refreshActiveTab();
+            });
+
+            // Chat Thread switch
+            document.getElementById("chatThreadSelect").addEventListener("change", async (e) => {
+                activeConversationId = e.target.value;
+                await loadChatHistory();
+            });
+
+            // Dataset dropdown switch
+            document.getElementById("datasetSelect").addEventListener("change", async (e) => {
+                const fileId = e.target.value;
+                if (fileId) {
+                    activeFileId = fileId;
+                    await activateDataset(fileId);
+                } else {
+                    activeFileId = null;
+                    hideDatasetUI();
+                }
+            });
+
+            // Scroll-to-bottom button in chat
+            const chatContainer = document.getElementById("chatMessages");
+            const scrollBtn = document.getElementById("scrollBtn");
+            if (chatContainer && scrollBtn) {
+                chatContainer.addEventListener('scroll', () => {
+                    scrollBtn.style.display =
+                        (chatContainer.scrollHeight - chatContainer.scrollTop > chatContainer.clientHeight + 20)
+                            ? "block" : "none";
+                });
+                scrollBtn.addEventListener('click', () => {
+                    chatContainer.scrollTop = chatContainer.scrollHeight;
+                });
+            }
+        });
+
+        // ── Tab switching ───────────────────────────────────────
+        function showTab(tabId) {
+            document.querySelectorAll(".tab-content").forEach(el => el.classList.remove("active-tab"));
+            document.querySelectorAll(".nav-item").forEach(el => el.classList.remove("active"));
+
+            const target = document.getElementById(tabId);
+            if (target) target.classList.add("active-tab");
+
+            const navBtn = document.querySelector(`.nav-item[data-tab="${tabId}"]`);
+            if (navBtn) navBtn.classList.add("active");
+
+            // Auto-load data for the tab
+            if (tabId === 'visualizationsTab' && activeFileId) loadVisualizations();
+            if (tabId === 'historyTab' && currentSessionId) loadHistory();
+        }
+
+        function refreshActiveTab() {
+            const active = document.querySelector(".nav-item.active");
+            if (active) showTab(active.dataset.tab);
+        }
+
+        // ── Sessions ────────────────────────────────────────────
+        async function loadSessions() {
+            try {
+                const sessions = await apiRequest("/sessions");
+                const select = document.getElementById("sessionSelect");
+                select.innerHTML = "";
+                sessions.forEach(s => {
+                    const opt = document.createElement("option");
+                    opt.value = s.id;
+                    opt.innerText = s.name;
+                    select.appendChild(opt);
+                });
+                if (sessions.length > 0) {
+                    currentSessionId = sessions[0].id;
+                    await loadConversations();
+                }
+            } catch (err) {
+                console.error("Failed to load sessions:", err);
+            }
+        }
+
+        // ── Dataset Dropdown ────────────────────────────────────
+        async function loadUserDatasets() {
+            const select = document.getElementById("datasetSelect");
+            try {
+                const files = await apiRequest("/files/by-user");
+                select.innerHTML = "";
+                if (!files || files.length === 0) {
+                    select.innerHTML = '<option value="">— No datasets —</option>';
+                    activeFileId = null;
+                    hideDatasetUI();
+                    return;
+                }
+                files.forEach(f => {
+                    const opt = document.createElement("option");
+                    opt.value = f.id;
+                    opt.innerText = `${f.filename}  (${f.row_count}×${f.column_count})`;
+                    select.appendChild(opt);
+                });
+                // Auto-select first (most recent)
+                activeFileId = files[0].id;
+                select.value = activeFileId;
+                await activateDataset(activeFileId);
+            } catch (err) {
+                console.error("Failed to load user datasets:", err);
+                select.innerHTML = '<option value="">— Error —</option>';
+            }
+        }
+
+        async function activateDataset(fileId) {
+            // Show the active card
+            const card = document.getElementById("activeDatasetCard");
+            card.style.display = "block";
+
+            try {
+                const file = await apiRequest(`/files/${fileId}`);
+                document.getElementById("activeFilename").innerText = file.filename;
+                document.getElementById("activeMeta").innerText = `${file.row_count} rows × ${file.column_count} cols · ${file.file_type.toUpperCase()}`;
+            } catch (err) {
+                document.getElementById("activeFilename").innerText = "—";
+                document.getElementById("activeMeta").innerText = "—";
+            }
+
+            await loadProfile(fileId);
+            await loadPreview(fileId);
+            document.getElementById("viewDataEmpty").style.display = "none";
+        }
+
+        function hideDatasetUI() {
+            document.getElementById("activeDatasetCard").style.display = "none";
+            document.getElementById("statsGrid").style.display = "none";
+            document.getElementById("previewCard").style.display = "none";
+            document.getElementById("viewDataEmpty").style.display = "block";
+        }
+
+        // ── File Upload ─────────────────────────────────────────
+        function setupDropZone() {
+            const dropZone = document.getElementById("dropZone");
+            const fileInput = document.getElementById("fileInput");
+
+            dropZone.addEventListener("click", () => fileInput.click());
+            dropZone.addEventListener("dragover", (e) => { e.preventDefault(); dropZone.classList.add("dragover"); });
+            dropZone.addEventListener("dragleave", () => dropZone.classList.remove("dragover"));
+            dropZone.addEventListener("drop", (e) => {
+                e.preventDefault();
+                dropZone.classList.remove("dragover");
+                if (e.dataTransfer.files.length) uploadFile(e.dataTransfer.files[0]);
+            });
+            fileInput.addEventListener("change", (e) => {
+                if (e.target.files.length) uploadFile(e.target.files[0]);
+            });
+        }
+
+        async function uploadFile(file) {
+            const formData = new FormData();
+            formData.append("session_id", currentSessionId);
+            formData.append("file", file);
+
+            try {
+                const res = await apiRequest("/files/upload", {
+                    method: "POST",
+                    body: formData
+                });
+                activeFileId = res.id;
+                // Refresh dropdown and activate
+                await loadUserDatasets();
+                showTab('viewDataTab');
+            } catch (err) {
+                alert("Upload failed: " + err.message);
+            }
+        }
+
+        // ── Profile & Preview ───────────────────────────────────
+        async function loadProfile(fileId) {
+            try {
+                const profile = await apiRequest(`/files/${fileId}/profile`);
+                document.getElementById("statsGrid").style.display = "grid";
+                document.getElementById("previewCard").style.display = "block";
+
+                const json = profile.profile_json || {};
+                document.getElementById("statRows").innerText = json.rows || 0;
+                document.getElementById("statCols").innerText = json.columns || 0;
+
+                let totalMissing = 0;
+                if (json.missing_values) {
+                    Object.values(json.missing_values).forEach(v => totalMissing += (v.count || 0));
+                }
+                const missingPct = json.rows && json.columns ? ((totalMissing / (json.rows * json.columns)) * 100).toFixed(1) : 0;
+                document.getElementById("statMissing").innerText = `${missingPct}%`;
+                document.getElementById("statDuplicates").innerText = profile.duplicates_count || 0;
+            } catch (err) {
+                console.error("Failed to load profile:", err);
+            }
+        }
+
+        async function loadPreview(fileId) {
+            try {
+                const preview = await apiRequest(`/files/${fileId}/preview?limit=20`);
+                const headRow = document.getElementById("tableHead");
+                const body = document.getElementById("tableBody");
+                headRow.innerHTML = "";
+                body.innerHTML = "";
+
+                preview.columns.forEach(col => {
+                    const th = document.createElement("th");
+                    th.innerText = col;
+                    headRow.appendChild(th);
+                });
+
+                preview.rows.forEach(row => {
+                    const tr = document.createElement("tr");
+                    preview.columns.forEach(col => {
+                        const td = document.createElement("td");
+                        td.innerText = row[col] !== undefined ? row[col] : "";
+                        tr.appendChild(td);
+                    });
+                    body.appendChild(tr);
+                });
+            } catch (err) {
+                console.error("Failed to load preview:", err);
+            }
+        }
+
+        // ── Visualizations (per-dataset) ────────────────────────
+        async function loadVisualizations() {
+            if (!activeFileId) return;
+            const container = document.getElementById("chartsGrid");
+            try {
+                const charts = await apiRequest(`/files/${activeFileId}/visualizations`);
+                if (!charts || !charts.length) {
+                    container.innerHTML = `<div class="empty-state"><span class="empty-icon">📊</span>No charts yet for this dataset. Ask the AI to generate some!</div>`;
+                    return;
+                }
+                container.innerHTML = "";
+                charts.forEach(c => {
+                    const div = document.createElement("div");
+                    div.className = "glass-card chart-card";
+                    const filename = c.image_path.replace(/\\/g, "/").split("/").pop();
+                    const imgUrl = `http://127.0.0.1:8000/generated/${filename}`;
+                    div.innerHTML = `
+                        <h4 style="font-size:1rem; margin-bottom:8px;">${c.title}</h4>
+                        <img src="${imgUrl}" alt="${c.title}">
+                        ${c.observations ? `<p style="font-size:0.82rem; color:var(--text-secondary); margin-top:8px;">${c.observations}</p>` : ""}
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Failed to load visualizations:", err);
+                container.innerHTML = `<div class="empty-state" style="color:var(--accent-rose);">Error loading charts: ${err.message}</div>`;
+            }
+        }
+
+        // ── History (per-session) ───────────────────────────────
+        async function loadHistory() {
+            if (!currentSessionId) return;
+            const container = document.getElementById("historyContainer");
+            try {
+                const analyses = await apiRequest(`/analysis?session_id=${currentSessionId}`);
+                if (!analyses || !analyses.length) {
+                    container.innerHTML = `<div class="empty-state"><span class="empty-icon">📜</span>No analysis history yet.</div>`;
+                    return;
+                }
+                container.innerHTML = "";
+                analyses.forEach(a => {
+                    const div = document.createElement("div");
+                    div.className = "glass-card";
+                    div.style.marginBottom = "14px";
+                    div.innerHTML = `
+                        <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:8px;">
+                            <span class="badge badge-primary">${a.analysis_type}</span>
+                            <span style="font-size:0.78rem; color:var(--text-muted);">${new Date(a.created_at).toLocaleString()}</span>
+                        </div>
+                        <h4 style="margin-bottom:6px; font-size:0.92rem;">${a.request}</h4>
+                        ${a.observations ? `<p style="font-size:0.85rem; color:var(--text-secondary);">${a.observations}</p>` : ""}
+                    `;
+                    container.appendChild(div);
+                });
+            } catch (err) {
+                console.error("Failed to load history:", err);
+            }
+        }
+        // ── Chat ────────────────────────────────────────────────
+        async function loadConversations() {
+            if (!currentSessionId) return;
+            try {
+                const convs = await apiRequest(`/chat/conversations?session_id=${currentSessionId}`);
+                const select = document.getElementById("chatThreadSelect");
+                select.innerHTML = "";
+                
+                if (convs.length === 0) {
+                    await createNewConversation();
+                    return;
+                }
+                
+                convs.forEach(c => {
+                    const opt = document.createElement("option");
+                    opt.value = c.id;
+                    opt.innerText = c.title || "New Conversation";
+                    select.appendChild(opt);
+                });
+                
+                activeConversationId = convs[0].id; // default to most recent
+                select.value = activeConversationId;
+                await loadChatHistory();
+            } catch (err) {
+                console.error("Failed to load conversations:", err);
+            }
+        }
+
+        async function createNewConversation() {
+            if (!currentSessionId) return;
+            try {
+                const newConv = await apiRequest("/chat/conversations", {
+                    method: "POST",
+                    body: { session_id: currentSessionId, title: "New Conversation" }
+                });
+                activeConversationId = newConv.id;
+                
+                // Add to dropdown and select it
+                const select = document.getElementById("chatThreadSelect");
+                const opt = document.createElement("option");
+                opt.value = newConv.id;
+                opt.innerText = newConv.title;
+                select.insertBefore(opt, select.firstChild);
+                select.value = newConv.id;
+                
+                await loadChatHistory();
+            } catch (err) {
+                console.error("Failed to create new conversation:", err);
+            }
+        }
+
+        async function loadChatHistory() {
+            if (!activeConversationId) return;
+            try {
+                const history = await apiRequest(`/chat/history?conversation_id=${activeConversationId}`);
+                const container = document.getElementById("chatMessages");
+                
+                // Keep only the welcome message (first child)
+                const welcomeMsg = container.firstElementChild;
+                container.innerHTML = "";
+                if (welcomeMsg) container.appendChild(welcomeMsg);
+                
+                history.forEach(msg => {
+                    const div = document.createElement("div");
+                    div.className = `msg-bubble msg-${msg.role}`;
+                    if (msg.role === "assistant") {
+                        div.innerHTML = marked.parse(msg.content);
+                    } else {
+                        div.innerText = msg.content;
+                    }
+                    container.appendChild(div);
+                });
+                container.scrollTop = container.scrollHeight;
+            } catch (err) {
+                console.error("Failed to load chat history:", err);
+            }
+        }
+
+        let isStreaming = false;
+
+        async function sendChatMessage() {
+            if (isStreaming || !activeConversationId) return;
+
+            const input = document.getElementById("chatInput");
+            const sendBtn = document.querySelector(".chat-input-container .btn-primary");
+            const query = input.value.trim();
+            if (!query) return;
+
+            input.value = "";
+            appendMessage("user", query);
+
+            const chatContainer = document.getElementById("chatMessages");
+            setTimeout(() => { chatContainer.scrollTop = chatContainer.scrollHeight; }, 0);
+            const scrollBtn = document.getElementById("scrollBtn");
+            if (scrollBtn) scrollBtn.style.display = "none";
+
+            // Show thinking indicator
+            const thinkingEl = showThinkingIndicator();
+            isStreaming = true;
+            input.disabled = true;
+            sendBtn.disabled = true;
+
+            try {
+                const res = await apiRequest("/chat/message", {
+                    method: "POST",
+                    body: { session_id: currentSessionId, conversation_id: activeConversationId, file_id: activeFileId, query: query }
+                });
+
+                // Remove thinking indicator
+                removeThinkingIndicator(thinkingEl);
+
+                // Stream the response word by word
+                await streamMessage(res.content);
+                
+                // If this was the first message, refresh conversation list to update title
+                const chatSelect = document.getElementById("chatThreadSelect");
+                const currentOpt = chatSelect.options[chatSelect.selectedIndex];
+                if (currentOpt && currentOpt.innerText === "New Conversation") {
+                    await loadConversations();
+                }
+
+                // After chat may have generated artifacts, refresh the active tab
+                refreshActiveTab();
+            } catch (err) {
+                removeThinkingIndicator(thinkingEl);
+                appendMessage("assistant", "Error: " + err.message);
+            } finally {
+                isStreaming = false;
+                input.disabled = false;
+                sendBtn.disabled = false;
+                input.focus();
+            }
+        }
+
+        function showThinkingIndicator() {
+            const container = document.getElementById("chatMessages");
+            const div = document.createElement("div");
+            div.className = "msg-bubble msg-assistant thinking-indicator";
+            div.innerHTML = `
+                <div class="thinking-dots">
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                    <span class="dot"></span>
+                </div>
+            `;
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+            return div;
+        }
+
+        function removeThinkingIndicator(el) {
+            if (el && el.parentNode) el.parentNode.removeChild(el);
+        }
+
+        async function streamMessage(fullText) {
+            const container = document.getElementById("chatMessages");
+            const div = document.createElement("div");
+            div.className = "msg-bubble msg-assistant";
+            container.appendChild(div);
+
+            // Split into words, preserving markdown structure
+            const words = fullText.split(/(\s+)/);   // keep whitespace tokens
+            let accumulated = "";
+            const WORD_DELAY = 20;      // ms between words — fast but visible
+            const BATCH_SIZE = 3;       // render every N words for performance
+
+            for (let i = 0; i < words.length; i++) {
+                accumulated += words[i];
+
+                // Re-render markdown every BATCH_SIZE words or on last word
+                if (i % BATCH_SIZE === 0 || i === words.length - 1) {
+                    div.innerHTML = marked.parse(accumulated);
+                    container.scrollTop = container.scrollHeight;
+                }
+
+                // Small delay between words (skip pure whitespace tokens)
+                if (words[i].trim().length > 0) {
+                    await sleep(WORD_DELAY);
+                }
+            }
+
+            // Final render to ensure completeness
+            div.innerHTML = marked.parse(fullText);
+            container.scrollTop = container.scrollHeight;
+        }
+
+        function sleep(ms) {
+            return new Promise(resolve => setTimeout(resolve, ms));
+        }
+
+        function appendMessage(role, text) {
+            const container = document.getElementById("chatMessages");
+            const div = document.createElement("div");
+            div.className = `msg-bubble msg-${role}`;
+            if (role === "assistant") {
+                div.innerHTML = marked.parse(text);
+            } else {
+                div.innerText = text;
+            }
+            container.appendChild(div);
+            container.scrollTop = container.scrollHeight;
+        }
+    </script>
+</body>
+</html>

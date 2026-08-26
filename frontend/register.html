@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Register - Analytica AI v2</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        .auth-container {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            background: radial-gradient(circle at top right, rgba(56, 189, 248, 0.1), transparent 40%),
+                        radial-gradient(circle at bottom left, rgba(168, 85, 247, 0.1), transparent 40%),
+                        var(--bg-main);
+        }
+        .auth-box {
+            width: 100%;
+            max-width: 440px;
+            padding: 36px;
+            border-radius: var(--radius-lg);
+        }
+        .auth-header { text-align: center; margin-bottom: 24px; }
+        .auth-title { font-size: 1.6rem; font-weight: 700; margin-top: 12px; }
+        .error-alert {
+            background: rgba(244, 63, 94, 0.15);
+            border: 1px solid var(--accent-rose);
+            color: var(--accent-rose);
+            padding: 10px;
+            border-radius: var(--radius-sm);
+            font-size: 0.85rem;
+            margin-bottom: 16px;
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="auth-container">
+        <div class="auth-box glass">
+            <div class="auth-header">
+                <div style="font-size:2.4rem;">🤖</div>
+                <div class="auth-title">Create Account</div>
+                <div style="font-size:0.88rem; color:var(--text-secondary);">Join Analytica AI v2 Platform</div>
+            </div>
+
+            <div id="errorAlert" class="error-alert"></div>
+
+            <form id="registerForm">
+                <div class="form-group">
+                    <label for="fullName">Full Name</label>
+                    <input type="text" id="fullName" class="form-input" placeholder="John Doe">
+                </div>
+                <div class="form-group">
+                    <label for="username">Username</label>
+                    <input type="text" id="username" class="form-input" required placeholder="johndoe">
+                </div>
+                <div class="form-group">
+                    <label for="email">Email</label>
+                    <input type="email" id="email" class="form-input" required placeholder="john@example.com">
+                </div>
+                <div class="form-group">
+                    <label for="password">Password</label>
+                    <input type="password" id="password" class="form-input" required placeholder="••••••••">
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 12px; padding: 12px;">Create Account</button>
+            </form>
+
+            <div style="text-align: center; margin-top: 20px; font-size: 0.88rem; color: var(--text-secondary);">
+                Already have an account? <a href="login.html">Sign In</a>
+            </div>
+        </div>
+    </div>
+
+    <script src="js/api.js"></script>
+    <script>
+        document.getElementById("registerForm").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const errBox = document.getElementById("errorAlert");
+            errBox.style.display = "none";
+
+            const payload = {
+                full_name: document.getElementById("fullName").value,
+                username: document.getElementById("username").value,
+                email: document.getElementById("email").value,
+                password: document.getElementById("password").value
+            };
+
+            try {
+                await apiRequest("/auth/register", {
+                    method: "POST",
+                    body: payload
+                });
+                alert("Account created successfully! Please sign in.");
+                window.location.href = "login.html";
+            } catch (err) {
+                errBox.innerText = err.message;
+                errBox.style.display = "block";
+            }
+        });
+    </script>
+</body>
+</html>
